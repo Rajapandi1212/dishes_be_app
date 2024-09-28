@@ -1,15 +1,19 @@
 import express, { Express, Request, Response } from 'express';
+import v1Router from './routers/dishRouter';
 
 const app: Express = express();
 app.use(express.json());
+
 app.get('/', (req, res) => {
   res.json({ msg: 'Welcome' });
 });
 
+app.use('/api/v1', v1Router);
+
 // Middleware for handling 404 errors
 app.use((req: Request, res: Response) => {
   console.log('Request not found:', req?.path);
-  res.status(404).send({
+  res.status(404).json({
     success: false,
     message: 'Not Found',
   });

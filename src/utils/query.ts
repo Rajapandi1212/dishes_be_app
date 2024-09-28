@@ -7,12 +7,10 @@ export const executeQuery = async (query: any, values?: any) => {
       success: true,
       data: res?.rows,
       count: res?.rowCount,
+      total: (res?.rows?.[0] as any)?.total_count,
     };
   } catch (error) {
-    console.log('Error while executing query :', error);
-    return {
-      success: false,
-      error,
-    };
+    console.error('Error while executing query :', error);
+    throw error;
   }
 };
