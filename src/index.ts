@@ -1,5 +1,5 @@
 import express, { Express, Request, Response } from 'express';
-import v1Router from './routers/dishRouter';
+import v1Router from './routers';
 
 const app: Express = express();
 app.use(express.json());

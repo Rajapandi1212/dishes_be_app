@@ -74,7 +74,7 @@ export const uploadDishes = async () => {
       const dishesRows: any[][] = [];
       //Prepare dishes table values
       dishesJson?.forEach((dish, i) => {
-        const name = trimAndLower(dish?.name);
+        const name = trimText(dish?.name);
         const diet = trimAndLower(dish?.diet) === VEG_DIET;
         const flavor =
           dish?.flavor_profile && typeof dish?.state === 'string'
