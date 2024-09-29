@@ -1,8 +1,10 @@
 import express, { Express, Request, Response } from 'express';
+import cookieParser from 'cookie-parser';
 import v1Router from './routers';
 
 const app: Express = express();
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
   res.json({ msg: 'Welcome' });
