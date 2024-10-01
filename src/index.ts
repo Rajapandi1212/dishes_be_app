@@ -6,7 +6,7 @@ import v1Router from './routers';
 const app: Express = express();
 app.use(
   cors({
-    origin: '*',
+    origin: ['http://localhost:3000', '*'],
     methods: '*',
     allowedHeaders: '*',
     credentials: true,
