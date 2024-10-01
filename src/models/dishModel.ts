@@ -59,9 +59,17 @@ export const listDishes = async (req: Request, res: Response) => {
 
     // Narrow the type here, so TypeScript knows you're working with the success case
 
-    if (filtersData?.cookTimeLTE) {
-      filterConditions.push(`d.cook_time <= $${queryParams.length + 1}`);
-      queryParams.push(filtersData.cookTimeLTE);
+    if (filtersData?.cookTimeLTE !== undefined) {
+      if (filtersData.cookTimeLTE === 0) {
+        // If filter is 0, only get rows where cook_time is NULL
+        filterConditions.push(`d.cook_time IS NULL`);
+      } else {
+        // Otherwise, include rows with cook_time <= filter value or cook_time IS NULL
+        filterConditions.push(
+          `(d.cook_time <= $${queryParams.length + 1} OR d.cook_time IS NULL)`
+        );
+        queryParams.push(filtersData.cookTimeLTE);
+      }
     }
 
     if (filtersData?.cookTimeGTE) {
@@ -69,9 +77,17 @@ export const listDishes = async (req: Request, res: Response) => {
       queryParams.push(filtersData.cookTimeGTE);
     }
 
-    if (filtersData?.prepTimeLTE) {
-      filterConditions.push(`d.prep_time <= $${queryParams.length + 1}`);
-      queryParams.push(filtersData.prepTimeLTE);
+    if (filtersData?.prepTimeLTE !== undefined) {
+      if (filtersData.prepTimeLTE === 0) {
+        // If filter is 0, only get rows where cook_time is NULL
+        filterConditions.push(`d.prep_time IS NULL`);
+      } else {
+        // Otherwise, include rows with cook_time <= filter value or cook_time IS NULL
+        filterConditions.push(
+          `(d.prep_time <= $${queryParams.length + 1} OR d.prep_time IS NULL)`
+        );
+        queryParams.push(filtersData.cookTimeLTE);
+      }
     }
 
     if (filtersData?.prepTimeGTE) {
@@ -196,11 +212,11 @@ export const autoSuggestion = async (req: Request, res: Response) => {
       return;
     }
     const modifiedSearchTerm = trimAndLower(searchTerm as string);
-    if (modifiedSearchTerm?.length < 2) {
+    if (modifiedSearchTerm?.length < 1) {
       res.status(200).json({
         success: true,
         data: [],
-        message: 'Please enter more than 3 characters!!',
+        message: 'Please enter some characters!!',
       });
       return;
     }
@@ -215,16 +231,49 @@ export const autoSuggestion = async (req: Request, res: Response) => {
       FROM dishes d
       LEFT JOIN dishes_ingredients di ON d.id = di.dish_id
       LEFT JOIN ingredients i ON di.ingredient_id = i.id
-      WHERE d.name LIKE $1
-      OR i.name LIKE $1
-      OR d.flavor::text LIKE $1
-      OR d.state LIKE $1
-      OR d.region::text LIKE $1
-      OR d.course::text LIKE $1
+      WHERE d.name ILIKE $1
+      OR i.name ILIKE $1
+      OR d.flavor::text ILIKE $1
+      OR d.state ILIKE $1
+      OR d.region::text ILIKE $1
+      OR d.course::text ILIKE $1
       GROUP BY d.id
       ORDER BY name ASC;
     `;
     const response = await executeQuery(query, [`%${modifiedSearchTerm}%`]);
+    cache.set(cacheKey, response);
+    res.status(200).json(response);
+    return;
+  } catch (error: any) {
+    const message = error?.message || 'Error occured';
+    console.error(message, error);
+    res.status(400).json({ success: false, message, error });
+    return;
+  }
+};
+
+export const getDish = async (req: Request, res: Response) => {
+  try {
+    const id = req?.params?.id;
+    const cacheKey = `dish_${id}`;
+    const cachedValue = cache.get(cacheKey);
+    if (cachedValue) {
+      res.status(200).json(cachedValue);
+      return;
+    }
+    const query = `SELECT d.*,
+    CASE 
+        WHEN d.diet THEN 'vegetarian' 
+        ELSE 'non vegetarian' 
+       END AS diet_label,
+    ARRAY_AGG(i.name) AS ingredient_names
+    FROM dishes d
+    LEFT JOIN dishes_ingredients di ON d.id = di.dish_id
+    LEFT JOIN ingredients i ON di.ingredient_id = i.id
+    WHERE d.id = $1
+    GROUP BY d.id;
+    `;
+    const response = await executeQuery(query, [id]);
     cache.set(cacheKey, response);
     res.status(200).json(response);
     return;

@@ -151,7 +151,7 @@ export const uploadDishes = async () => {
   console.log('=== COMPLETED ===');
 };
 
-export const uploadDishesBySeparateTable = async () => {
+const uploadDishesBySeparateTable = async () => {
   console.log('=== STARTING ===');
   try {
     if (Array.isArray(dishesJson) && dishesJson?.length > 0) {
