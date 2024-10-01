@@ -90,7 +90,6 @@ export const signin = async (req: Request, res: Response) => {
     const user: any = await executeQuery(query, [email])?.then(
       (res) => res?.data?.[0]
     );
-    console.log('typeof', typeof user, Array.isArray(user), user);
     if (user?.email === email) {
       const isPasswordMatch = await bcrypt.compare(password, user?.password);
       if (isPasswordMatch) {
